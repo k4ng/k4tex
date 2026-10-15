@@ -1,0 +1,418 @@
+% Yonghyun Kang <yh@k4ng.co>
+%
+% Inspired by arXiv + NeurIPS styles
+%
+% Last revision: 29 December 2024
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{k4tex}[2024/12/29 K4TeX: A simple latex style]
+
+%% options ---------------------------------------------------------------------
+
+\newif\ifktx@twocol
+\if@twocolumn\ktx@twocoltrue\fi
+\def\ktx@stage{draft}
+\def\ktx@paper{a4paper}
+\DeclareOption{draft}{\def\ktx@stage{draft}}
+\DeclareOption{preprint}{\def\ktx@stage{preprint}}
+\DeclareOption{release}{\def\ktx@stage{release}}
+\DeclareOption{final}{\def\ktx@stage{release}}
+\DeclareOption{onecolumn}{\ktx@twocolfalse}
+\DeclareOption{twocolumn}{\ktx@twocoltrue}
+\DeclareOption{a4paper}{\def\ktx@paper{a4paper}}
+\DeclareOption{letterpaper}{\def\ktx@paper{letterpaper}}
+\DeclareOption*{\PackageWarning{k4tex}{Unknown option `\CurrentOption'}}
+\ProcessOptions*
+
+%% stages ----------------------------------------------------------------------
+
+\newif\ifktx@anon
+\newif\ifktx@lineno
+\newif\ifktx@date
+\def\ktx@stretch{1}
+\@namedef{ktx@stage@draft}{%
+  \ktx@anontrue\ktx@linenotrue\def\ktx@stretch{1.5}\def\ktx@tag{\draftname}%
+  \ifktx@twocol
+    \PackageInfo{k4tex}{twocolumn is ignored in the draft stage}%
+    \ktx@twocolfalse
+  \fi}
+\@namedef{ktx@stage@preprint}{\ktx@linenotrue\def\ktx@tag{\preprintname}}
+\@namedef{ktx@stage@release}{\ktx@datetrue\let\ktx@tag\@empty}
+\@nameuse{ktx@stage@\ktx@stage}
+
+\newcommand\draftname{DRAFT}
+\newcommand\preprintname{PREPRINT}
+\newcommand\anonymousname{Anonymous Author(s)}
+\newcommand\ackname{Acknowledgments}
+
+\DeclareRobustCommand\IfStage[1]{%
+  \@expandtwoargs\in@{,\ktx@stage,}{,\zap@space#1 \@empty,}%
+  \ifin@\expandafter\@firstoftwo\else\expandafter\@secondoftwo\fi}
+
+%% fonts -----------------------------------------------------------------------
+
+\RequirePackage[T1]{fontenc}
+\renewcommand\rmdefault{ptm}
+\renewcommand\sfdefault{phv}
+\renewcommand\ttdefault{lmtt}
+
+% font sizes with reduced leading
+\renewcommand\normalsize{%
+  \@setfontsize\normalsize\@xpt\@xipt
+  \abovedisplayskip      7\p@ \@plus 2\p@ \@minus 5\p@
+  \abovedisplayshortskip \z@ \@plus 3\p@
+  \belowdisplayskip      \abovedisplayskip
+  \belowdisplayshortskip 4\p@ \@plus 3\p@ \@minus 3\p@}
+\normalsize
+\renewcommand\small{%
+  \@setfontsize\small\@ixpt\@xpt
+  \abovedisplayskip      6\p@ \@plus 1.5\p@ \@minus 4\p@
+  \abovedisplayshortskip \z@  \@plus 2\p@
+  \belowdisplayskip      \abovedisplayskip
+  \belowdisplayshortskip 3\p@ \@plus 2\p@ \@minus 2\p@}
+\renewcommand\footnotesize{\@setfontsize\footnotesize\@ixpt\@xpt}
+\renewcommand\scriptsize{\@setfontsize\scriptsize\@viipt\@viiipt}
+\renewcommand\tiny{\@setfontsize\tiny\@vipt\@viipt}
+\renewcommand\large{\@setfontsize\large\@xiipt{14}}
+\renewcommand\Large{\@setfontsize\Large\@xivpt{16}}
+\renewcommand\LARGE{\@setfontsize\LARGE\@xviipt{20}}
+\renewcommand\huge{\@setfontsize\huge\@xxpt{23}}
+\renewcommand\Huge{\@setfontsize\Huge\@xxvpt{28}}
+
+\RequirePackage{setspace}
+\setstretch{\ktx@stretch}
+
+%% page layout -----------------------------------------------------------------
+
+\RequirePackage{geometry}
+\edef\ktx@tmp{\noexpand\geometry{\ktx@paper,
+  textwidth=\ifktx@twocol 6.75in\else 5.5in\fi, top=1in, bottom=1in,
+  heightrounded, headheight=12pt, headsep=25pt, footskip=30pt}}
+\ktx@tmp
+% after geometry, which re-applies a class-level twocolumn option
+\setlength\columnsep{.25in}
+\ifktx@twocol
+  \if@twocolumn\else\twocolumn\fi
+\else
+  \if@twocolumn\onecolumn\fi
+\fi
+
+\widowpenalty=10000
+\clubpenalty=10000
+\flushbottom
+\sloppy
+
+% header: meta header (left) and stage tag (right); page number in the footer
+\let\ktx@meta\@empty
+\newcommand\metaheader[1]{\def\ktx@meta{#1}}
+\@namedef{ps@k4tex}{%
+  \let\@mkboth\@gobbletwo
+  \def\@oddhead{\ktx@head}\let\@evenhead\@oddhead
+  \def\@oddfoot{\hfil\thepage\hfil}\let\@evenfoot\@oddfoot}
+\def\ktx@head{%
+  \ifx\ktx@meta\@empty\ifx\ktx@tag\@empty\else\ktx@@head\fi\else\ktx@@head\fi}
+\def\ktx@@head{%
+  \rlap{\rule[-4\p@]{\textwidth}{.4\p@}}%
+  {\small\ktx@meta}\hfil{\small\bfseries\ktx@tag}}
+\pagestyle{k4tex}
+
+%% line numbers ----------------------------------------------------------------
+
+\ifktx@lineno
+  \RequirePackage{lineno}
+  \linenumbers
+  \ifktx@twocol % numbers in the outer margin of each column
+    \def\makeLineNumberRunning{%
+      \if@firstcolumn\makeLineNumberLeft\else\makeLineNumberRight\fi}
+  \fi
+  % lineno < 5.0 does not handle amsmath displays; wrap them in linenomath
+  \@ifpackagelater{lineno}{2006/01/01}{}{%
+    \def\ktx@lnpatch#1{%
+      \expandafter\let\csname ktx@ln@#1\expandafter\endcsname\csname #1\endcsname
+      \expandafter\let\csname ktx@ln@end#1\expandafter\endcsname\csname end#1\endcsname
+      \@namedef{#1}{\linenomath\@nameuse{ktx@ln@#1}}%
+      \@namedef{end#1}{\@nameuse{ktx@ln@end#1}\endlinenomath}}
+    \AtBeginDocument{\@ifpackageloaded{amsmath}{%
+      \@for\ktx@tmp:={equation,align,flalign,alignat,gather,multline}\do{%
+        \expandafter\ktx@lnpatch\expandafter{\ktx@tmp}%
+        \expandafter\ktx@lnpatch\expandafter{\ktx@tmp*}}}{}}}
+\fi
+
+%% sections --------------------------------------------------------------------
+
+\renewcommand\section{\@startsection{section}{1}{\z@}%
+  {-2.0ex \@plus -0.5ex \@minus -0.2ex}{1.5ex \@plus 0.3ex \@minus 0.2ex}%
+  {\large\bfseries\raggedright}}
+\renewcommand\subsection{\@startsection{subsection}{2}{\z@}%
+  {-1.8ex \@plus -0.5ex \@minus -0.2ex}{0.8ex \@plus 0.2ex}%
+  {\normalsize\bfseries\raggedright}}
+\renewcommand\subsubsection{\@startsection{subsubsection}{3}{\z@}%
+  {-1.5ex \@plus -0.5ex \@minus -0.2ex}{0.5ex \@plus 0.2ex}%
+  {\normalsize\bfseries\raggedright}}
+\renewcommand\paragraph{\@startsection{paragraph}{4}{\z@}%
+  {1.5ex \@plus 0.5ex \@minus 0.2ex}{-1em}%
+  {\normalsize\bfseries}}
+
+%% floats, footnotes, paragraphs, lists ----------------------------------------
+
+\renewcommand\topfraction{0.85}
+\renewcommand\bottomfraction{0.4}
+\renewcommand\textfraction{0.1}
+\renewcommand\floatpagefraction{0.7}
+
+% \abovecaptionskip separates caption and body whether the caption sits below
+% the body (figures) or above it (tables)
+\long\def\@makecaption#1#2{%
+  \ifdim\prevdepth=-\@m\p@ % nothing typeset yet: caption on top
+    \def\ktx@capskip{\vskip\abovecaptionskip}%
+  \else
+    \vskip\abovecaptionskip\let\ktx@capskip\relax
+  \fi
+  \sbox\@tempboxa{#1: #2}%
+  \ifdim\wd\@tempboxa>\hsize
+    #1: #2\par
+  \else
+    \global\@minipagefalse
+    \hb@xt@\hsize{\hfil\box\@tempboxa\hfil}%
+  \fi
+  \ktx@capskip}
+
+\setlength\footnotesep{6.65\p@}
+\setlength{\skip\footins}{9\p@ \@plus 4\p@ \@minus 2\p@}
+\renewcommand\footnoterule{\kern-3\p@ \hrule width 12pc \kern 2.6\p@}
+
+% footnotes below bottom floats: the kernel's \@makecol, but floats are
+% combined with the text before the footnotes are appended
+\gdef\@makecol{%
+  \setbox\@outputbox\box\@cclv
+  \let\@elt\relax
+  \xdef\@freelist{\@freelist\@midlist}%
+  \global\let\@midlist\@empty
+  \@combinefloats
+  \ifvoid\footins\else
+    \setbox\@outputbox\vbox{%
+      \boxmaxdepth\@maxdepth
+      \unvbox\@outputbox
+      \vskip\skip\footins
+      \color@begingroup\normalcolor\footnoterule\unvbox\footins\color@endgroup}%
+  \fi
+  \ifvbox\@kludgeins
+    \@makespecialcolbox
+  \else
+    \setbox\@outputbox\vbox to\@colht{%
+      \@texttop
+      \dimen@\dp\@outputbox
+      \unvbox\@outputbox
+      \vskip-\dimen@
+      \@textbottom}%
+  \fi
+  \global\maxdepth\@maxdepth}
+
+\setlength\parindent{\z@}
+\setlength\parskip{5.5\p@}
+
+\setlength\topsep{4\p@ \@plus 1\p@ \@minus 2\p@}
+\setlength\partopsep{1\p@ \@plus 0.5\p@ \@minus 0.5\p@}
+\setlength\itemsep{2\p@ \@plus 1\p@ \@minus 0.5\p@}
+\setlength\parsep{2\p@ \@plus 1\p@ \@minus 0.5\p@}
+\setlength\leftmargini{3pc}
+\setlength\leftmarginii{2em}
+\setlength\leftmarginiii{1.5em}
+\setlength\leftmarginiv{1.0em}
+\setlength\leftmarginv{0.5em}
+\def\@listi{\leftmargin\leftmargini}
+\def\@listii{\leftmargin\leftmarginii
+  \labelwidth\leftmarginii \advance\labelwidth-\labelsep
+  \topsep 2\p@ \@plus 1\p@ \@minus 0.5\p@
+  \parsep 1\p@ \@plus 0.5\p@ \@minus 0.5\p@
+  \itemsep \parsep}
+\def\@listiii{\leftmargin\leftmarginiii
+  \labelwidth\leftmarginiii \advance\labelwidth-\labelsep
+  \topsep 1\p@ \@plus 0.5\p@ \@minus 0.5\p@
+  \parsep \z@
+  \partopsep 0.5\p@ \@plus 0\p@ \@minus 0.5\p@
+  \itemsep \topsep}
+
+%% authors ---------------------------------------------------------------------
+
+\RequirePackage{keyval}
+\newcount\ktx@naffil
+\newcount\ktx@nnote
+\newcount\ktx@nanon
+\let\ktx@affils\@empty
+\let\ktx@notes\@empty
+\let\ktx@authors\@empty
+\def\ktx@style{individual}
+
+\newcommand\affiliation[2]{%
+  \global\advance\ktx@naffil\@ne
+  \expandafter\xdef\csname ktx@affilnum@#1\endcsname{\the\ktx@naffil}%
+  \expandafter\gdef\csname ktx@affil@#1\endcsname{#2}%
+  \g@addto@macro\ktx@affils{\ktx@affilline{#1}}}
+
+\newcommand\authornote[2][]{%
+  \def\ktx@key{#1}%
+  \ifx\ktx@key\@empty
+    \global\advance\ktx@nanon\@ne
+    \edef\ktx@key{*\the\ktx@nanon}%
+    \expandafter\gdef\csname ktx@notenum@\ktx@key\endcsname{}%
+  \else
+    \global\advance\ktx@nnote\@ne
+    \expandafter\xdef\csname ktx@notenum@\ktx@key\endcsname{\the\ktx@nnote}%
+  \fi
+  \expandafter\gdef\csname ktx@note@\ktx@key\endcsname{#2}%
+  \edef\ktx@tmp{\noexpand\ktx@fn{\ktx@key}}%
+  \expandafter\g@addto@macro\expandafter\ktx@notes\expandafter{\ktx@tmp}}
+
+\newcommand\addauthor[2][]{\g@addto@macro\ktx@authors{\ktx@author{#1}{#2}}}
+
+\newcommand\authorstyle[1]{%
+  \@ifundefined{ktx@style@#1}%
+    {\PackageError{k4tex}{Unknown author style `#1'}{Use individual or combined.}}%
+    {\def\ktx@style{#1}}}
+
+\define@key{ktx@au}{affil}{\def\ktx@au@affil{#1}}
+\define@key{ktx@au}{email}{\def\ktx@au@email{#1}}
+\define@key{ktx@au}{note}{\def\ktx@au@note{#1}}
+\define@key{ktx@au}{extra}{\def\ktx@au@extra{#1}}
+
+% \ktx@parse{<keys>}{<1: number affiliations>}: read keys, build marks in \ktx@mk
+\def\ktx@parse#1#2{%
+  \let\ktx@au@affil\@empty\let\ktx@au@email\@empty
+  \let\ktx@au@note\@empty\let\ktx@au@extra\@empty
+  \setkeys{ktx@au}{#1}%
+  \let\ktx@mk\@empty
+  \ktx@foreach\ktx@au@affil{\ktx@ifkey{affil}{%
+    \ifnum#2>\z@\ifnum\ktx@naffil>\@ne
+      \ktx@addmark{\csname ktx@affilnum@\ktx@k\endcsname}%
+    \fi\fi}}%
+  \ktx@foreach\ktx@au@note{\ktx@ifkey{note}%
+    {\ktx@addmark{\noexpand\@fnsymbol{\csname ktx@notenum@\ktx@k\endcsname}}}}}
+\def\ktx@foreach#1#2{%
+  \edef\ktx@list{\expandafter\zap@space#1 \@empty}%
+  \@for\ktx@k:=\ktx@list\do{#2}}
+\def\ktx@ifkey#1#2{%
+  \@ifundefined{ktx@#1num@\ktx@k}%
+    {\PackageWarning{k4tex}{Undefined #1 key `\ktx@k'}}{#2}}
+\def\ktx@addmark#1{%
+  \edef\ktx@mk{\unexpanded\expandafter{\ktx@mk}\ifx\ktx@mk\@empty\else,\fi#1}}
+\def\ktx@sup{\ifx\ktx@mk\@empty\else\textsuperscript{\normalfont\ktx@mk}\fi}
+
+% individual: one centred block per author (name, affiliations, email, extra)
+\def\ktx@style@individual{%
+  \lineskip 1em % gap between wrapped rows of blocks
+  \let\ktx@sep\relax
+  \let\ktx@author\ktx@author@individual
+  \ktx@authors\par}
+\def\ktx@author@individual#1#2{%
+  \ktx@parse{#1}\z@
+  \def\ktx@rows{\bfseries#2\ktx@sup}%
+  \ktx@foreach\ktx@au@affil{\@ifundefined{ktx@affil@\ktx@k}{}%
+    {\expandafter\ktx@addrow\expandafter{\csname ktx@affil@\ktx@k\endcsname}}}%
+  \ifx\ktx@au@email\@empty\else\ktx@addrow{\texttt{\ktx@au@email}}\fi
+  \ifx\ktx@au@extra\@empty\else\ktx@addrow{\ktx@au@extra}\fi
+  \ktx@sep\begin{tabular}[t]{c}\ktx@rows\end{tabular}%
+  \def\ktx@sep{\penalty\z@\hskip 1em \@plus 1fil\relax}}
+\def\ktx@addrow#1{\edef\ktx@rows{\unexpanded\expandafter{\ktx@rows}\noexpand\\\unexpanded{#1}}}
+
+% combined: names with marks, then numbered affiliations, then contacts
+\def\ktx@style@combined{%
+  \let\ktx@sep\relax
+  \let\ktx@contacts\@empty
+  \let\ktx@author\ktx@author@combined
+  \ktx@authors\par
+  \ifx\ktx@affils\@empty\else\vskip .5ex\ktx@affils\fi
+  \ifx\ktx@contacts\@empty\else\vskip .5ex{\ktx@contacts\par}\fi}
+\def\ktx@author@combined#1#2{%
+  \ktx@parse{#1}\@ne
+  \ktx@sep\mbox{\bfseries#2\ktx@sup}%
+  \def\ktx@sep{\hskip 1em \@plus .5em \@minus .25em\relax}%
+  \ifx\ktx@au@email\@empty\else
+    \ktx@addcontact{\noexpand\texttt{\unexpanded\expandafter{\ktx@au@email}}}\fi
+  \ifx\ktx@au@extra\@empty\else
+    \ktx@addcontact{\unexpanded\expandafter{\ktx@au@extra}}\fi}
+\def\ktx@affilline#1{{%
+  \ifnum\ktx@naffil>\@ne\textsuperscript{\@nameuse{ktx@affilnum@#1}}\fi
+  \@nameuse{ktx@affil@#1}\par}}
+\def\ktx@addcontact#1{\edef\ktx@contacts{\unexpanded\expandafter{\ktx@contacts}%
+  \ifx\ktx@contacts\@empty\else,\hskip .5em \@plus .5em\relax\fi#1}}
+
+% plain \author{...}; \And / \AND separate blocks (\AND forces a new line)
+\def\ktx@rawauthor{%
+  \lineskip 1em
+  \def\And{\end{tabular}\penalty\z@\hskip 1em \@plus 1fil
+    \begin{tabular}[t]{c}\bfseries\ignorespaces}%
+  \def\AND{\end{tabular}\par\begin{tabular}[t]{c}\bfseries\ignorespaces}%
+  \begin{tabular}[t]{c}\bfseries\@author\end{tabular}\par}
+
+% author notes become footnotes on the title page
+\def\ktx@fn#1{%
+  \edef\ktx@tmp{\@nameuse{ktx@notenum@#1}}%
+  \edef\@thefnmark{\ifx\ktx@tmp\@empty\else\noexpand\@fnsymbol{\ktx@tmp}\fi}%
+  \ifdefined\H@@footnotetext % bypass hyperref's anchors
+    \expandafter\H@@footnotetext
+  \else
+    \expandafter\@footnotetext
+  \fi{\@nameuse{ktx@note@#1}}}
+
+%% title -----------------------------------------------------------------------
+
+% no date unless \date{...} or \datetoday is given (shown in release only)
+\let\@date\@empty
+% European date format, e.g. 15 October 2026
+\def\ktx@today{\number\day\space\ifcase\month\or
+  January\or February\or March\or April\or May\or June\or July\or
+  August\or September\or October\or November\or December\fi\space\number\year}
+\let\today\ktx@today
+\newcommand\datetoday{\date{\ktx@today}}
+
+\renewcommand\maketitle{\par
+  \begingroup
+    \renewcommand\thefootnote{\@fnsymbol\c@footnote}%
+    \def\@makefnmark{\@textsuperscript{\normalfont\@thefnmark}}%
+    \long\def\@makefntext##1{\parindent 1em\noindent
+      \hb@xt@1.8em{\hss\@textsuperscript{\normalfont\@thefnmark}}##1}%
+    \ifktx@anon\else\global\c@footnote\ktx@nnote\fi % \thanks marks follow author notes
+    \if@twocolumn
+      \ifnum\col@number=\@ne\ktx@maketitle\else\twocolumn[\ktx@maketitle]\fi
+    \else
+      \global\@topnum\z@
+      \ktx@maketitle
+    \fi
+    \ifktx@anon\else\ktx@notes\fi
+    \@thanks
+  \endgroup
+  \setcounter{footnote}{0}%
+  \global\let\maketitle\relax
+  \global\let\thanks\relax}
+
+\def\ktx@maketitle{%
+  \vbox{%
+    \hsize\textwidth \linewidth\hsize
+    \setstretch{1}\centering
+    \vskip .1in
+    {\LARGE\bfseries\@title\par}%
+    \vskip .25in
+    \ifktx@anon
+      {\bfseries\anonymousname\par}%
+    \else\ifx\ktx@authors\@empty
+      \ktx@rawauthor
+    \else
+      \@nameuse{ktx@style@\ktx@style}%
+    \fi\fi
+    \ifktx@date\ifx\@date\@empty\else\vskip .15in{\@date\par}\fi\fi
+    \vskip .3in}}
+
+%% abstract, acknowledgments ---------------------------------------------------
+
+\renewenvironment{abstract}
+  {\vskip .075in\centerline{\large\bfseries\abstractname}\vspace{.5ex}\begin{quote}}
+  {\par\end{quote}\vskip 1ex}
+
+\ifktx@anon
+  \newenvironment{ack}{\setbox\@tempboxa\vbox\bgroup}{\egroup}
+\else
+  \newenvironment{ack}{\section*{\ackname}}{}
+\fi
+
+\endinput

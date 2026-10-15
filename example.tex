@@ -1,0 +1,54 @@
+\documentclass{article}
+
+% stage:   draft | preprint | release (or final)
+% columns: onecolumn | twocolumn        (twocolumn ignored in draft)
+% paper:   a4paper | letterpaper
+\usepackage[preprint, onecolumn, a4paper]{k4tex}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{natbib}
+
+\title{A Template}
+
+\metaheader{\IfStage{release}{Published at the Cobol Engineering Workshop 2026}{Under review}}
+
+\affiliation{cobol}{Cobol Institute of Engineering\\Mombasa, IC, USA}
+\affiliation{inc}{Inception University}
+
+\authornote[eq]{Equal contribution.}
+\authornote[cor]{Corresponding author.}
+
+\addauthor[affil=cobol, email=cobb@cobol.edu, note={eq, cor}]{Leonardo DiCaprio}
+\addauthor[affil={cobol, su}, email=arthur@cobol.edu, note=eq]{Joseph Gordon-Levitt}
+\addauthor[affil=inc, email=ariadne@inception.edu, extra={\url{https://ariadne.example}}]{Elliot Page}
+\addauthor[affil=inc, email=eames@inception.edu]{Tom Hardy}
+
+\authorstyle{individual} % or: combined
+
+\date{14 October 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+  I bought the airline. It seemed neater.
+\end{abstract}
+
+\section{Introduction}
+
+Occaecat amet velit et officia sed ullamco occaecat duis veniam ad qui in dolore sed nulla ea sit veniam culpa. Aliqua do nisi duis consequat excepteur est reprehenderit eu esse cillum velit cillum. Veniam exercitation fugiat qui incididunt commodo aute labore nostrud voluptate mollit anim dolore consectetur labore. Commodo lorem magna sit ex in ea lorem ullamco nisi voluptate lorem consectetur cillum. Laboris velit elit consectetur sunt aliqua do eiusmod labore duis excepteur magna excepteur excepteur deserunt laboris do eiusmod ut eu. Commodo amet quis enim excepteur eiusmod voluptate non ea cillum ut eiusmod enim ut sint mollit esse ad exercitation est.
+
+Deserunt adipiscing eiusmod velit anim cupidatat eu esse nostrud excepteur aliquip culpa cillum aliqua deserunt qui. Sunt eu excepteur in adipiscing voluptate magna culpa labore quis nulla deserunt aute magna tempor. Deserunt labore consectetur ad dolore velit adipiscing elit laboris ex aute pariatur non excepteur cupidatat ea qui in. Ipsum veniam tempor sint proident est consectetur enim voluptate excepteur esse nulla. Proident magna voluptate consequat deserunt consectetur eiusmod cillum occaecat ea.
+
+\begin{ack}
+  They're still looking at us. Yeah, it was worth a shot.
+\end{ack}
+
+\end{document}
